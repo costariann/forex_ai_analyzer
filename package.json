@@ -7,7 +7,7 @@
   "scripts": {
     "test": "jest",
     "start": "node index.js",
-    "compose:up": "docker compose up -d",
+    "compose:up": "docker compose up --build --watch",
     "compose:down": "docker compose down"
   },
   "keywords": [],
