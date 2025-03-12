@@ -3,6 +3,8 @@ name: CI/CD Pipeline for Forex_AI
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
 
 jobs:
   build-and-test:
@@ -10,7 +12,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
@@ -23,7 +25,10 @@ jobs:
       - name: Run tests
         run: npm test
 
-      - name: Build and start with Docker compose
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and start with Docker Compose
         run: docker compose up -d --build
 
       - name: Check container logs
@@ -33,17 +38,16 @@ jobs:
         if: always()
         run: docker compose down
 
-      - name: Login to GitHub container registry
+      - name: Login to GitHub Container Registry
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Push Docker image
+      - name: Tag and Push Docker Image
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
-          docker compose build
           docker tag forex_ai_analyzer-app ghcr.io/${{ github.repository_owner }}/forex_ai_analyzer:latest
           docker push ghcr.io/${{ github.repository_owner }}/forex_ai_analyzer:latest
