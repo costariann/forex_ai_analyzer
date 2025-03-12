@@ -8,7 +8,7 @@
     "test": "jest",
     "start": "node index.js",
     "compose:up": "docker compose up -d",
-    "compoese:down": "docker compose down"
+    "compose:down": "docker compose down"
   },
   "keywords": [],
   "author": "",
