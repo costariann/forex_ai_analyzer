@@ -45,5 +45,5 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           docker compose build
-          docker tag app ghcr.io/${{ github.repository_owner }}/forex_ai_analyzer:latest
+          docker tag forex_ai_analyzer-app ghcr.io/${{ github.repository_owner }}/forex_ai_analyzer:latest
           docker push ghcr.io/${{ github.repository_owner }}/forex_ai_analyzer:latest
