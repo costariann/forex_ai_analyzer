@@ -3,8 +3,6 @@ name: CI/CD Pipeline for Forex_AI
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
 
 jobs:
   build-and-test:
@@ -47,5 +45,5 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           docker compose build
-          docker tag forex_ai_analyzer_app ghcr.io/${{ github.repository_owner }}/forex_ai_analyzer:latest
+          docker tag app ghcr.io/${{ github.repository_owner }}/forex_ai_analyzer:latest
           docker push ghcr.io/${{ github.repository_owner }}/forex_ai_analyzer:latest
