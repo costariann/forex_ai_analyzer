@@ -8,6 +8,14 @@ services:
       - '3005:3005'
     volumes:
       - .:/app
+      - /app/node_modules
     environment:
       - NODE_ENV=development
     command: npm start
+    develop:
+      watch:
+        - action: rebuild
+          path: ./package.json
+        - action: rebuild
+          path: ./package-lock.json
+          target: /app
