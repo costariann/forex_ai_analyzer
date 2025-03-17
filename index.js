@@ -1,4 +1,3 @@
-// index.js (updated with additional logging)
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -44,8 +43,10 @@ app.get('/api/forex', async (req, res) => {
     const data = await response.json();
     console.log('API Response:', JSON.stringify(data, null, 2));
 
-    if (data['Error Message']) {
-      throw new Error(data['Error Message']);
+    if (data['Information']) {
+      throw new Error(
+        'API rate limit reached or invalid key: ' + data['Information']
+      );
     }
 
     const timeSeries = data['Time Series FX (Daily)'];
@@ -61,8 +62,8 @@ app.get('/api/forex', async (req, res) => {
         low: parseFloat(values['3. low']),
         close: parseFloat(values['4. close']),
       }))
-      .sort((a, b) => new Date(a.time) - new Date(b.time)) // Sort ascending
-      .slice(-50); // Take the latest 50 days
+      .sort((a, b) => new Date(a.time) - new Date(b.time))
+      .slice(-50);
 
     console.log('Sorted Candles:', JSON.stringify(candles, null, 2));
     console.log('First Candle Date:', candles[0].time);
@@ -70,7 +71,18 @@ app.get('/api/forex', async (req, res) => {
     res.json(candles);
   } catch (error) {
     console.error('API error:', error.message);
-    res.status(500).json({ error: error.message });
+    if (
+      error.message.includes('rate limit') ||
+      error.message.includes('invalid key')
+    ) {
+      res
+        .status(429)
+        .json({
+          error: 'API rate limit reached. Please wait or upgrade your plan.',
+        });
+    } else {
+      res.status(500).json({ error: error.message });
+    }
   }
 });
 

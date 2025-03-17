@@ -1,6 +1,19 @@
 console.log('Client side javascript file is loaded!');
 
+// Debug library loading
+console.log('LightweightCharts:', typeof LightweightCharts);
+if (typeof LightweightCharts !== 'undefined') {
+  console.log('LightweightCharts version:', LightweightCharts.version());
+  console.log(
+    'LightweightCharts.createChart:',
+    typeof LightweightCharts.createChart
+  );
+} else {
+  console.error('LightweightCharts not loaded!');
+}
+
 let chartInstance = null;
+let candlestickSeries = null;
 
 async function fetchCandles() {
   try {
@@ -25,31 +38,27 @@ async function initChart() {
     return;
   }
 
-  const processedCandles = candles.map((candle) => ({
-    time: candle.time,
-    open: candle.open,
-    high: candle.high,
-    low: candle.low,
-    close: candle.close,
-  }));
+  console.log('Processed candles for chart:', JSON.stringify(candles, null, 2));
+  console.log('First Processed Candle Date:', candles[0]?.time);
+  console.log('Last Processed Candle Date:', candles[candles.length - 1]?.time);
 
-  console.log(
-    'Processed candles for chart:',
-    JSON.stringify(processedCandles, null, 2)
-  );
-  console.log('First Processed Candle Date:', processedCandles[0]?.time);
-  console.log(
-    'Last Processed Candle Date:',
-    processedCandles[processedCandles.length - 1]?.time
-  );
+  const chartElement = document.getElementById('chart');
+  if (!chartElement) {
+    console.error('Chart element not found!');
+    return;
+  }
 
-  const ctx = document.getElementById('chart');
+  if (typeof LightweightCharts === 'undefined') {
+    console.error('LightweightCharts library not loaded!');
+    return;
+  }
+
   if (chartInstance) {
     chartInstance.remove();
   }
 
-  chartInstance = LightweightCharts.createChart(ctx, {
-    width: ctx.clientWidth,
+  chartInstance = LightweightCharts.createChart(chartElement, {
+    width: chartElement.clientWidth,
     height: 600,
     layout: {
       background: { color: '#ffffff' },
@@ -62,10 +71,29 @@ async function initChart() {
     timeScale: {
       timeVisible: true,
       secondsVisible: false,
+      borderColor: '#d1d4dc',
+    },
+    rightPriceScale: {
+      borderColor: '#d1d4dc',
+    },
+    crosshair: {
+      mode: LightweightCharts.CrosshairMode.Normal,
     },
   });
 
-  const candlestickSeries = chartInstance.addCandlestickSeries({
+  console.log('chartInstance:', chartInstance);
+  console.log('chartInstance methods:', Object.keys(chartInstance));
+  console.log(
+    'chartInstance.addCandlestickSeries:',
+    typeof chartInstance.addCandlestickSeries
+  );
+
+  if (typeof chartInstance.addCandlestickSeries !== 'function') {
+    console.error('addCandlestickSeries is not available on chartInstance!');
+    return;
+  }
+
+  candlestickSeries = chartInstance.addCandlestickSeries({
     upColor: '#26a69a',
     downColor: '#ef5350',
     borderVisible: false,
@@ -73,10 +101,10 @@ async function initChart() {
     wickDownColor: '#ef5350',
   });
 
-  candlestickSeries.setData(processedCandles);
+  candlestickSeries.setData(candles);
   chartInstance.timeScale().fitContent();
 
-  console.log('Chart initialized with', processedCandles.length, 'candles');
+  console.log('Chart initialized with', candles.length, 'candles');
 }
 
 async function updateChart() {
@@ -86,25 +114,10 @@ async function updateChart() {
     return;
   }
 
-  const processedCandles = candles.map((candle) => ({
-    time: candle.time,
-    open: candle.open,
-    high: candle.high,
-    low: candle.low,
-    close: candle.close,
-  }));
-
-  if (chartInstance) {
-    const candlestickSeries = chartInstance.addCandlestickSeries({
-      upColor: '#26a69a',
-      downColor: '#ef5350',
-      borderVisible: false,
-      wickUpColor: '#26a69a',
-      wickDownColor: '#ef5350',
-    });
-    candlestickSeries.setData(processedCandles);
+  if (candlestickSeries) {
+    candlestickSeries.setData(candles);
     chartInstance.timeScale().fitContent();
-    console.log('Chart updated with', processedCandles.length, 'candles');
+    console.log('Chart updated with', candles.length, 'candles');
   }
 }
 
