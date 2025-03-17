@@ -1,14 +1,16 @@
 console.log('Client side javascript file is loaded!');
 
-let chartInstance = null; // Store chart instance for updates
+let chartInstance = null;
 
 async function fetchCandles() {
   try {
     const response = await fetch('/api/forex');
+    console.log('Fetch response status:', response.status);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     const data = await response.json();
+    console.log('Raw fetched data:', JSON.stringify(data, null, 2));
     return Array.isArray(data) ? data : [];
   } catch (error) {
     console.error('Error fetching candles:', error);
@@ -23,79 +25,60 @@ async function initChart() {
     return;
   }
 
-  console.log('Candles data:', candles);
+  const processedCandles = candles.map((candle) => ({
+    time: candle.time,
+    open: candle.open,
+    high: candle.high,
+    low: candle.low,
+    close: candle.close,
+  }));
 
-  const ctx = document.getElementById('chart').getContext('2d');
+  console.log(
+    'Processed candles for chart:',
+    JSON.stringify(processedCandles, null, 2)
+  );
+  console.log('First Processed Candle Date:', processedCandles[0]?.time);
+  console.log(
+    'Last Processed Candle Date:',
+    processedCandles[processedCandles.length - 1]?.time
+  );
 
-  // Destroy existing chart if it exists
+  const ctx = document.getElementById('chart');
   if (chartInstance) {
-    chartInstance.destroy();
+    chartInstance.remove();
   }
 
-  chartInstance = new Chart(ctx, {
-    type: 'candlestick',
-    data: {
-      datasets: [
-        {
-          label: 'EUR/USD Daily',
-          data: candles.map((candle) => ({
-            x: new Date(candle.time),
-            o: candle.open,
-            h: candle.high,
-            l: candle.low,
-            c: candle.close,
-          })),
-          borderColor: {
-            up: 'green', // Green for upward candles
-            down: 'red', // Red for downward candles
-            unchanged: 'gray',
-          },
-          color: {
-            up: 'rgba(0, 255, 0, 0.5)', // Semi-transparent green fill
-            down: 'rgba(255, 0, 0, 0.5)', // Semi-transparent red fill
-            unchanged: 'rgba(128, 128, 128, 0.5)',
-          },
-        },
-      ],
+  chartInstance = LightweightCharts.createChart(ctx, {
+    width: ctx.clientWidth,
+    height: 600,
+    layout: {
+      background: { color: '#ffffff' },
+      textColor: '#333',
     },
-    options: {
-      scales: {
-        x: {
-          type: 'time',
-          time: {
-            unit: 'day',
-            displayFormats: {
-              day: 'MMM d',
-            },
-          },
-        },
-        y: {
-          beginAtZero: false,
-          title: {
-            display: true,
-            text: 'Price (USD)',
-          },
-        },
-      },
-      plugins: {
-        legend: {
-          display: true,
-        },
-        tooltip: {
-          enabled: true,
-          callbacks: {
-            label: (context) => {
-              const candle = context.raw;
-              return `Open: ${candle.o}, High: ${candle.h}, Low: ${candle.l}, Close: ${candle.c}`;
-            },
-          },
-        },
-      },
+    grid: {
+      vertLines: { color: '#e1e1e1' },
+      horzLines: { color: '#e1e1e1' },
+    },
+    timeScale: {
+      timeVisible: true,
+      secondsVisible: false,
     },
   });
+
+  const candlestickSeries = chartInstance.addCandlestickSeries({
+    upColor: '#26a69a',
+    downColor: '#ef5350',
+    borderVisible: false,
+    wickUpColor: '#26a69a',
+    wickDownColor: '#ef5350',
+  });
+
+  candlestickSeries.setData(processedCandles);
+  chartInstance.timeScale().fitContent();
+
+  console.log('Chart initialized with', processedCandles.length, 'candles');
 }
 
-// Real-time update function
 async function updateChart() {
   const candles = await fetchCandles();
   if (candles.length === 0) {
@@ -103,21 +86,35 @@ async function updateChart() {
     return;
   }
 
+  const processedCandles = candles.map((candle) => ({
+    time: candle.time,
+    open: candle.open,
+    high: candle.high,
+    low: candle.low,
+    close: candle.close,
+  }));
+
   if (chartInstance) {
-    chartInstance.data.datasets[0].data = candles.map((candle) => ({
-      x: new Date(candle.time),
-      o: candle.open,
-      h: candle.high,
-      l: candle.low,
-      c: candle.close,
-    }));
-    chartInstance.update();
+    const candlestickSeries = chartInstance.addCandlestickSeries({
+      upColor: '#26a69a',
+      downColor: '#ef5350',
+      borderVisible: false,
+      wickUpColor: '#26a69a',
+      wickDownColor: '#ef5350',
+    });
+    candlestickSeries.setData(processedCandles);
+    chartInstance.timeScale().fitContent();
+    console.log('Chart updated with', processedCandles.length, 'candles');
   }
 }
 
-// Initial chart load
 document.addEventListener('DOMContentLoaded', () => {
   initChart();
-  // Update every 10 seconds for near real-time
-  setInterval(updateChart, 10000);
+  setInterval(updateChart, 3600000); // 1 hour
+});
+
+window.addEventListener('resize', () => {
+  if (chartInstance) {
+    chartInstance.resize(document.getElementById('chart').clientWidth, 600);
+  }
 });

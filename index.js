@@ -1,3 +1,4 @@
+// index.js (updated with additional logging)
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -60,9 +61,12 @@ app.get('/api/forex', async (req, res) => {
         low: parseFloat(values['3. low']),
         close: parseFloat(values['4. close']),
       }))
-      .sort((a, b) => new Date(a.time) - new Date(b.time)) // Sort ascending for chart
-      .slice(0, 50);
+      .sort((a, b) => new Date(a.time) - new Date(b.time)) // Sort ascending
+      .slice(-50); // Take the latest 50 days
 
+    console.log('Sorted Candles:', JSON.stringify(candles, null, 2));
+    console.log('First Candle Date:', candles[0].time);
+    console.log('Last Candle Date:', candles[candles.length - 1].time);
     res.json(candles);
   } catch (error) {
     console.error('API error:', error.message);
