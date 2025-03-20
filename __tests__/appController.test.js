@@ -1,4 +1,3 @@
-// __tests__/appController.test.js
 import { getForexData } from '../src/controller/appController.js';
 import fetch from 'node-fetch';
 

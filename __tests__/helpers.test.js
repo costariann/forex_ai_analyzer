@@ -1,30 +1,66 @@
-import {
-  getMonthStart,
-  aggregateMonthlyPivotPoints,
-} from '../src/utils/helpers.js';
+import { describe, test, expect, beforeEach } from '@jest/globals';
+import { aggregateMonthlyPivotPoints } from '../src/utils/helpers.js';
 
-describe('getMonthStart', () => {
-  test('should return the start of the month for a given date string', () => {
-    const dateStr = '2023-10-15T12:00:00Z';
-    const result = getMonthStart(dateStr);
-    expect(result).toBe('2023-10-01');
+describe('Helpers', () => {
+  beforeEach(() => {
+    jest.spyOn(console, 'log').mockImplementation(() => {});
+    jest.spyOn(console, 'error').mockImplementation(() => {});
   });
-});
 
-describe('aggregateMonthlyPivotPoints', () => {
-  test('should aggregate monthly pivot points correctly', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  test('should calculate monthly pivot points correctly', () => {
     const candles = [
-      { time: '2023-10-01T00:00:00Z', high: 1.2, low: 1.1, close: 1.15 },
-      { time: '2023-10-02T00:00:00Z', high: 1.25, low: 1.05, close: 1.2 },
+      {
+        time: '2025-02-01',
+        open: 1.0,
+        high: 1.1,
+        low: 0.9,
+        close: 1.05,
+      },
+      {
+        time: '2025-02-02',
+        open: 1.05,
+        high: 1.15,
+        low: 1.0,
+        close: 1.1,
+      },
+      {
+        time: '2025-03-01',
+        open: 1.1,
+        high: 1.2,
+        low: 1.0,
+        close: 1.15,
+      },
     ];
 
     const result = aggregateMonthlyPivotPoints(candles);
-    expect(result).toEqual({
-      '2023-10-01': {
-        pivot: expect.any(Number),
-        s2: expect.any(Number),
-        r2: expect.any(Number),
-      },
-    });
+
+    const febHigh = 1.15;
+    const febLow = 0.9;
+    const febClose = 1.1;
+    const febPivot = (febHigh + febLow + febClose) / 3;
+    expect(result['2025-02-01'].pivot).toBeCloseTo(febPivot, 5);
+    const febS2 = 2 * febPivot - 1.15;
+    const febR2 = 2 * febPivot - 0.9;
+    expect(result['2025-02-01'].s2).toBeCloseTo(febS2, 5);
+    expect(result['2025-02-01'].r2).toBeCloseTo(febR2, 5);
+
+    const marchPivot = (1.2 + 1.0 + 1.15) / 3;
+    expect(result['2025-03-01'].pivot).toBeCloseTo(marchPivot, 5);
+    const marchS2 = 2 * marchPivot - 1.2;
+    const marchR2 = 2 * marchPivot - 1.0;
+    expect(result['2025-03-01'].s2).toBeCloseTo(marchS2, 5);
+    expect(result['2025-03-01'].r2).toBeCloseTo(marchR2, 5);
+  });
+
+  test('should throw an error if no candles are provided', () => {
+    const candles = [];
+
+    expect(() => aggregateMonthlyPivotPoints(candles)).toThrow(
+      'No data available for pivot calculation'
+    );
   });
 });

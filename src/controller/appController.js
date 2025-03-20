@@ -1,4 +1,3 @@
-// src/controller/appController.js
 import fetch from 'node-fetch';
 import config from '../config/config.js';
 import {
@@ -79,10 +78,9 @@ async function getForexData(req, res) {
 
     const monthlyPivots = aggregateMonthlyPivotPoints(adjustedCandles);
 
-    // Get the previous month (February 2025)
     const currentDate = new Date();
-    currentDate.setUTCDate(1); // Start of current month (March 2025)
-    currentDate.setUTCMonth(currentDate.getUTCMonth() - 1); // Previous month (February 2025)
+    currentDate.setUTCDate(1);
+    currentDate.setUTCMonth(currentDate.getUTCMonth() - 1);
     const previousMonthStart = getMonthStart(currentDate.toISOString());
     const previousMonthPivot = monthlyPivots[previousMonthStart] || {
       pivot: null,
